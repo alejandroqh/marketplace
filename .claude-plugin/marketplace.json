@@ -1,0 +1,23 @@
+{
+  "name": "aquintanar-openclaw-marketplace",
+  "owner": {
+    "name": "Alejandro Quintanar",
+    "url": "https://github.com/alejandroqh"
+  },
+  "metadata": {
+    "description": "OpenClaw plugins by Alejandro Quintanar — browser automation, tools, and agent utilities"
+  },
+  "plugins": [
+    {
+      "name": "browser39",
+      "source": "./browser39",
+      "description": "Headless web browser for AI agents. Fetches pages as token-optimized markdown with JS support, forms, cookies, storage, and web search.",
+      "author": { "name": "Alejandro Quintanar" },
+      "repository": "https://github.com/alejandroqh/browser39",
+      "license": "MIT",
+      "keywords": ["browser", "headless", "markdown", "ai-agent", "web", "scraping"],
+      "category": "tools",
+      "tags": ["browser", "headless", "web-search", "dom", "cookies", "forms"]
+    }
+  ]
+}
