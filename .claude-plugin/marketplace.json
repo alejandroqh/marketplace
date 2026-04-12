@@ -5,7 +5,7 @@
     "url": "https://github.com/alejandroqh"
   },
   "metadata": {
-    "description": "OpenClaw plugins by Alejandro Quintanar — browser automation, tools, and agent utilities"
+    "description": "OpenClaw plugins by Alejandro Quintanar — browser automation, terminal emulation, privilege elevation, and agent utilities"
   },
   "plugins": [
     {
@@ -18,6 +18,28 @@
       "keywords": ["browser", "headless", "markdown", "ai-agent", "web", "scraping"],
       "category": "tools",
       "tags": ["browser", "headless", "web-search", "dom", "cookies", "forms"]
+    },
+    {
+      "name": "npcterm",
+      "source": "./npcterm",
+      "description": "Headless, in-memory terminal emulator for AI agents. Full ANSI/VT100 emulation with PTY spawning.",
+      "author": { "name": "Alejandro Quintanar" },
+      "repository": "https://github.com/alejandroqh/npcterm",
+      "license": "Apache-2.0",
+      "keywords": ["terminal", "emulator", "pty", "ansi", "vt100", "ai-agent"],
+      "category": "tools",
+      "tags": ["terminal", "pty", "emulator", "screen-reader", "shell"]
+    },
+    {
+      "name": "sudo39",
+      "source": "./sudo39",
+      "description": "Guarded privilege-elevation MCP server for AI agents. Run commands via sudo, pkexec, macOS admin prompt, or Windows UAC, gated by an allowlist policy.",
+      "author": { "name": "Alejandro Quintanar" },
+      "repository": "https://github.com/alejandroqh/sudo39",
+      "license": "MIT",
+      "keywords": ["sudo", "elevation", "privilege", "security", "ai-agent"],
+      "category": "tools",
+      "tags": ["sudo", "privilege-elevation", "security", "allowlist", "policy"]
     }
   ]
 }
