@@ -1,0 +1,18 @@
+{
+  "name": "memory39",
+  "version": "1.0.1",
+  "description": "OpenClaw native plugin for memory39 — temporal-priority memory system for AI agents",
+  "type": "module",
+  "openclaw": {
+    "extensions": ["./index.ts"],
+    "compat": {
+      "pluginApi": ">=2026.3.24-beta.2",
+      "minGatewayVersion": "2026.3.24-beta.2"
+    }
+  },
+  "dependencies": {
+    "@sinclair/typebox": "^0.34.0"
+  },
+  "keywords": ["openclaw", "plugin", "memory", "recall", "temporal", "ai-agent"],
+  "license": "Apache-2.0"
+}

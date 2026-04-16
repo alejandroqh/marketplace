@@ -1,0 +1,35 @@
+{
+  "id": "repo39",
+  "name": "repo39",
+  "description": "Token-optimized repository explorer for AI agents. Directory trees, symbol maps, dependency parsing, git diffs, and content search — all designed to minimize token usage.",
+  "version": "1.0.1",
+  "contracts": {
+    "tools": [
+      "repo39_tree",
+      "repo39_identify",
+      "repo39_map",
+      "repo39_deps",
+      "repo39_changes",
+      "repo39_search",
+      "repo39_review",
+      "repo39_summary"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "binaryPath": {
+        "type": "string",
+        "description": "Path to the repo39 binary. Defaults to 'repo39' (must be in PATH)."
+      }
+    }
+  },
+  "uiHints": {
+    "binaryPath": {
+      "label": "Binary path",
+      "placeholder": "repo39",
+      "help": "Absolute path to the repo39 binary, or leave empty to use PATH"
+    }
+  }
+}

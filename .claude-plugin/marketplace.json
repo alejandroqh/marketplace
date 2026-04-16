@@ -40,6 +40,28 @@
       "keywords": ["sudo", "elevation", "privilege", "security", "ai-agent"],
       "category": "tools",
       "tags": ["sudo", "privilege-elevation", "security", "allowlist", "policy"]
+    },
+    {
+      "name": "memory39",
+      "source": "./memory39",
+      "description": "Temporal-priority memory system for AI agents. Store and recall events, facts, people, and places with intelligent scoring (relevance + importance + recency).",
+      "author": { "name": "Alejandro Quintanar" },
+      "repository": "https://github.com/alejandroqh/memory39",
+      "license": "Apache-2.0",
+      "keywords": ["memory", "recall", "temporal", "sqlite", "fts5", "ai-agent"],
+      "category": "tools",
+      "tags": ["memory", "recall", "temporal-scoring", "sqlite", "bloom-filter"]
+    },
+    {
+      "name": "repo39",
+      "source": "./repo39",
+      "description": "Token-optimized repository explorer for AI agents. Directory trees, symbol maps, dependency parsing, git diffs, and content search.",
+      "author": { "name": "Alejandro Quintanar" },
+      "repository": "https://github.com/alejandroqh/repo39",
+      "license": "Apache-2.0",
+      "keywords": ["repo", "explorer", "codebase", "symbols", "token-optimized", "ai-agent"],
+      "category": "tools",
+      "tags": ["repo-explorer", "symbol-map", "dependencies", "git-diff", "search"]
     }
   ]
 }

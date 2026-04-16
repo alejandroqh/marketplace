@@ -1,0 +1,44 @@
+{
+  "id": "memory39",
+  "name": "memory39",
+  "description": "Temporal-priority memory system for AI agents. Store and recall events, facts, people, and places with intelligent scoring (relevance + importance + recency).",
+  "version": "1.0.1",
+  "contracts": {
+    "tools": [
+      "recall",
+      "event",
+      "thing",
+      "person",
+      "place",
+      "forget",
+      "alter",
+      "connect"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "binaryPath": {
+        "type": "string",
+        "description": "Path to the memory39 binary. Defaults to 'memory39' (must be in PATH)."
+      },
+      "dbPath": {
+        "type": "string",
+        "description": "Path to the SQLite database file. Defaults to memory39's default location."
+      }
+    }
+  },
+  "uiHints": {
+    "binaryPath": {
+      "label": "Binary path",
+      "placeholder": "memory39",
+      "help": "Absolute path to the memory39 binary, or leave empty to use PATH"
+    },
+    "dbPath": {
+      "label": "Database path",
+      "placeholder": "~/.local/share/memory39/memory39.db",
+      "help": "Path to the SQLite memory database"
+    }
+  }
+}
