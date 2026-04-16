@@ -10,7 +10,7 @@ Each plugin lives in its own subdirectory with a full OpenClaw native plugin str
 ## Structure
 
 ```
-openclaw-marketplace/
+marketplace/
 ├── .claude-plugin/
 │   └── marketplace.json        # Plugin index — lists all available plugins
 ├── browser39/                  # Each plugin gets its own directory
@@ -108,10 +108,10 @@ export default definePluginEntry({
 
 ```bash
 # From GitHub marketplace
-openclaw plugins install browser39 --marketplace https://github.com/alejandroqh/openclaw-marketplace
+openclaw plugins install browser39 --marketplace https://github.com/alejandroqh/marketplace
 
 # List available plugins
-openclaw plugins marketplace list https://github.com/alejandroqh/openclaw-marketplace
+openclaw plugins marketplace list https://github.com/alejandroqh/marketplace
 
 # Local dev (link, no copy)
 openclaw plugins install ./browser39 -l

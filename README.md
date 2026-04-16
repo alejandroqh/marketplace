@@ -21,7 +21,7 @@
 Launch the interactive installer to pick tools and targets:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/alejandroqh/openclaw-marketplace/main/h39.sh | sh
+curl -fsSL https://raw.githubusercontent.com/alejandroqh/marketplace/main/h39.sh | sh
 ```
 
 Binaries are installed to `~/.local/bin` (override with `H39_INSTALL_DIR`).
@@ -35,18 +35,18 @@ Point OpenClaw at this marketplace and install any plugin in one command:
 ```bash
 # Install a plugin from this marketplace
 openclaw plugins install browser39 \
-  --marketplace https://github.com/alejandroqh/openclaw-marketplace
+  --marketplace https://github.com/alejandroqh/marketplace
 
 # Browse all available plugins
 openclaw plugins marketplace list \
-  https://github.com/alejandroqh/openclaw-marketplace
+  https://github.com/alejandroqh/marketplace
 ```
 
 For local development:
 
 ```bash
-git clone https://github.com/alejandroqh/openclaw-marketplace.git
-cd openclaw-marketplace
+git clone https://github.com/alejandroqh/marketplace.git
+cd marketplace
 
 # Link a plugin locally (no copy, instant updates)
 openclaw plugins install ./browser39 -l
@@ -220,7 +220,7 @@ cd browser39 && npm install
 ## Repo Structure
 
 ```
-openclaw-marketplace/
+marketplace/
 ├── h39.sh                        # MCP server installer (curl | bash)
 ├── .claude-plugin/
 │   └── marketplace.json          # Plugin index

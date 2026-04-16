@@ -1,4 +1,18 @@
 #!/usr/bin/env bash
+#
+# Harness39 (h39) - MCP tool installer for macOS and Linux
+#
+# Author:  Alejandro Quintanar  <https://github.com/alejandroqh>
+# License: MIT
+#
+# DISCLAIMER: This software is provided "AS IS", without warranty of any kind,
+# express or implied, including but not limited to the warranties of
+# merchantability, fitness for a particular purpose and noninfringement. In no
+# event shall the author or copyright holder be liable for any claim, damages
+# or other liability, whether in an action of contract, tort or otherwise,
+# arising from, out of or in connection with the software or the use or other
+# dealings in the software. Use at your own risk.
+#
 set -euo pipefail
 
 # ── Constants ────────────────────────────────────────────────────────────────
@@ -72,13 +86,7 @@ detect_platform() {
 # ── JSON helpers ─────────────────────────────────────────────────────────────
 
 json_tool_init() {
-    if command -v jq &>/dev/null; then
-        H39_JSON="jq"
-    elif command -v python3 &>/dev/null; then
-        H39_JSON="python3"
-    else
-        die "Neither jq nor python3 found. Install one to continue."
-    fi
+    command -v python3 &>/dev/null || die "python3 not found. Install python3 to continue."
 }
 
 # json_set_key <file> <dotpath> <key> <value_json>
@@ -86,13 +94,7 @@ json_set_key() {
     local file="$1" dotpath="$2" key="$3" value="$4"
     [ -f "$file" ] || echo '{}' > "$file"
 
-    if [ "$H39_JSON" = "jq" ]; then
-        local tmp="${file}.h39tmp"
-        jq --argjson val "$value" \
-           "$(printf '%s //= {} | %s["%s"] = $val' "$dotpath" "$dotpath" "$key")" \
-           "$file" > "$tmp" && mv "$tmp" "$file"
-    else
-        python3 -c "
+    python3 -c "
 import json, sys, os
 file, dotpath, key, val_str = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
 parts = [p for p in dotpath.lstrip('.').split('.') if p]
@@ -106,11 +108,12 @@ for p in parts:
     node.setdefault(p, {})
     node = node[p]
 node[key] = value
-with open(file, 'w') as f:
+tmp = file + '.h39tmp'
+with open(tmp, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
+os.replace(tmp, file)
 " "$file" "$dotpath" "$key" "$value"
-    fi
 }
 
 # json_delete_key <file> <dotpath> <key>
@@ -118,12 +121,8 @@ json_delete_key() {
     local file="$1" dotpath="$2" key="$3"
     [ -f "$file" ] || return 0
 
-    if [ "$H39_JSON" = "jq" ]; then
-        local tmp="${file}.h39tmp"
-        jq "del(${dotpath}[\"${key}\"])" "$file" > "$tmp" && mv "$tmp" "$file"
-    else
-        python3 -c "
-import json, sys
+    python3 -c "
+import json, sys, os
 file, dotpath, key = sys.argv[1], sys.argv[2], sys.argv[3]
 parts = [p for p in dotpath.lstrip('.').split('.') if p]
 try:
@@ -135,11 +134,12 @@ for p in parts:
     if p not in node: sys.exit(0)
     node = node[p]
 node.pop(key, None)
-with open(file, 'w') as f:
+tmp = file + '.h39tmp'
+with open(tmp, 'w') as f:
     json.dump(data, f, indent=2)
     f.write('\n')
+os.replace(tmp, file)
 " "$file" "$dotpath" "$key"
-    fi
 }
 
 # json_read_keys <file> <dotpath> → prints one key per line
@@ -147,10 +147,7 @@ json_read_keys() {
     local file="$1" dotpath="$2"
     [ -f "$file" ] || return 0
 
-    if [ "$H39_JSON" = "jq" ]; then
-        jq -r "try (${dotpath} | keys[]) catch empty" "$file" 2>/dev/null || true
-    else
-        python3 -c "
+    python3 -c "
 import json, sys
 file, dotpath = sys.argv[1], sys.argv[2]
 parts = [p for p in dotpath.lstrip('.').split('.') if p]
@@ -164,7 +161,6 @@ for p in parts:
 if isinstance(node, dict):
     for k in sorted(node.keys()): print(k)
 " "$file" "$dotpath" 2>/dev/null || true
-    fi
 }
 
 # ── TOML helpers (for Codex config.toml) ─────────────────────────────────────
@@ -174,7 +170,7 @@ toml_delete_server() {
     local file="$1" name="$2"
     [ -f "$file" ] || return 0
     python3 -c "
-import sys
+import sys, os
 
 file_path, name = sys.argv[1], sys.argv[2]
 header_exact = '[mcp_servers.' + name + ']'
@@ -191,8 +187,10 @@ for line in lines:
     if not skip:
         result.append(line)
 
-with open(file_path, 'w') as f:
+tmp = file_path + '.h39tmp'
+with open(tmp, 'w') as f:
     f.writelines(result)
+os.replace(tmp, file_path)
 " "$file" "$name"
 }
 
@@ -234,8 +232,10 @@ if env:
 content += section
 
 os.makedirs(os.path.dirname(file_path) or '.', exist_ok=True)
-with open(file_path, 'w') as f:
+tmp = file_path + '.h39tmp'
+with open(tmp, 'w') as f:
     f.write(content)
+os.replace(tmp, file_path)
 " "$file" "$name" "$cmd" "$args_json" "$env_json"
 }
 
@@ -263,7 +263,7 @@ for name in sorted(names):
 target_config_path() {
     case "$1" in
         claude-cli)
-            echo "${HOME}/.claude/settings.json"
+            echo "${HOME}/.claude.json"
             ;;
         claude-desktop)
             case "$H39_OS" in
@@ -373,50 +373,31 @@ build_mcp_entry() {
     local args
     args="$(server_args "$server")"
 
-    local entry=""
-    case "$target" in
-        claude-cli)
-            if [ -n "$args" ]; then
-                entry=$(printf '{"type":"stdio","command":"%s","args":["%s"]}' "$bin_path" "$args")
-            else
-                entry=$(printf '{"type":"stdio","command":"%s","args":[]}' "$bin_path")
-            fi
-            ;;
-        claude-desktop|openclaw)
-            if [ -n "$args" ]; then
-                entry=$(printf '{"command":"%s","args":["%s"]}' "$bin_path" "$args")
-            else
-                entry=$(printf '{"command":"%s","args":[]}' "$bin_path")
-            fi
-            ;;
-        opencode)
-            if [ -n "$args" ]; then
-                entry=$(printf '{"type":"local","command":["%s","%s"]}' "$bin_path" "$args")
-            else
-                entry=$(printf '{"type":"local","command":["%s"]}' "$bin_path")
-            fi
-            ;;
-    esac
-
-    # Merge env vars if provided (not supported by opencode)
-    if [ -n "$env_json" ] && [ "$env_json" != "{}" ]; then
-        if [ "$target" = "opencode" ]; then
-            warn "OpenCode does not support env vars in MCP config - skipping env for $server"
-        else
-            if [ "$H39_JSON" = "jq" ]; then
-                entry=$(echo "$entry" | jq --argjson e "$env_json" '. + {env: $e}')
-            else
-                entry=$(python3 -c "
-import json, sys
-entry = json.loads(sys.argv[1])
-entry['env'] = json.loads(sys.argv[2])
-print(json.dumps(entry))
-" "$entry" "$env_json")
-            fi
-        fi
+    if [ "$target" = "opencode" ] && [ -n "$env_json" ] && [ "$env_json" != "{}" ]; then
+        warn "OpenCode does not support env vars in MCP config - skipping env for $server"
+        env_json="{}"
     fi
 
-    echo "$entry"
+    python3 -c "
+import json, sys
+target, cmd, args_str, env_str = sys.argv[1:5]
+args = [args_str] if args_str else []
+env = json.loads(env_str) if env_str else {}
+
+if target == 'claude-cli':
+    entry = {'type': 'stdio', 'command': cmd, 'args': args}
+elif target in ('claude-desktop', 'openclaw'):
+    entry = {'command': cmd, 'args': args}
+elif target == 'opencode':
+    entry = {'type': 'local', 'command': ([cmd, args_str] if args_str else [cmd])}
+else:
+    sys.exit('unknown target: ' + target)
+
+if env and target != 'opencode':
+    entry['env'] = env
+
+print(json.dumps(entry))
+" "$target" "$bin_path" "$args" "$env_json"
 }
 
 # ── Download ─────────────────────────────────────────────────────────────────
@@ -485,18 +466,7 @@ cmd_install() {
     # Build env JSON from --env pairs
     local env_json="{}"
     if [ ${#env_pairs[@]} -gt 0 ]; then
-        if [ "$H39_JSON" = "jq" ]; then
-            env_json="{"
-            local first=true
-            for pair in "${env_pairs[@]}"; do
-                local k="${pair%%=*}" v="${pair#*=}"
-                $first || env_json+=","
-                env_json+="$(printf '"%s":"%s"' "$k" "$v")"
-                first=false
-            done
-            env_json+="}"
-        else
-            env_json=$(python3 -c "
+        env_json=$(python3 -c "
 import json, sys
 pairs = sys.argv[1:]
 d = {}
@@ -505,7 +475,6 @@ for p in pairs:
     d[k] = v
 print(json.dumps(d))
 " "${env_pairs[@]}")
-        fi
     fi
 
     local servers
@@ -767,6 +736,7 @@ cmd_menu() {
         printf '\033[2J\033[H'
         echo ""
         printf '  \033[1;36mHarness39\033[0m - MCP Tool Manager\n'
+        printf '  \033[38;5;240mby Alejandro Quintanar - github.com/alejandroqh\033[0m\n'
         printf '  \033[38;5;240m%s  %s\033[0m\n' "$H39_OS" "$H39_ARCH"
         echo ""
         printf '  \033[1mMCP Tools\033[0m\n'
@@ -932,6 +902,8 @@ cmd_help() {
     cat >&2 <<'EOF'
 
   Harness39 - MCP tool installer
+  Author: Alejandro Quintanar  <https://github.com/alejandroqh>
+  License: MIT - Provided "AS IS", without warranty of any kind.
 
   Usage:
     h39                                    Interactive menu
@@ -949,7 +921,7 @@ cmd_help() {
     sudo39       Privilege-elevation for AI agents
 
   Targets:
-    claude-cli       Claude Code CLI (~/.claude/settings.json)
+    claude-cli       Claude Code CLI (~/.claude.json)
     claude-desktop   Claude Desktop app
     opencode         OpenCode (~/.config/opencode/opencode.json)
     codex            OpenAI Codex CLI (~/.codex/config.toml)
