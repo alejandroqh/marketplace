@@ -21,7 +21,7 @@
 Launch the interactive installer to pick tools and targets:
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/alejandroqh/marketplace/main/h39.sh | sh
+curl -fsSL https://raw.githubusercontent.com/alejandroqh/marketplace/main/h39.sh | bash
 ```
 
 Binaries are installed to `~/.local/bin` (override with `H39_INSTALL_DIR`).
