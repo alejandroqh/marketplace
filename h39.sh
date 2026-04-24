@@ -442,6 +442,7 @@ download_binary() {
         local asset="${server}-${H39_OS}-${H39_ARCH}.zip"
         local url="https://github.com/${GITHUB_ORG}/${server}/releases/latest/download/${asset}"
         local tmpzip="${INSTALL_DIR}/.${server}.dl.zip"
+        local tmpdir="${INSTALL_DIR}/.${server}.extract"
 
         info "Downloading ${server} (${H39_OS}-${H39_ARCH})..."
         if ! curl -fSL --progress-bar -o "$tmpzip" "$url"; then
@@ -450,24 +451,46 @@ download_binary() {
         fi
 
         info "Extracting ${asset}..."
-        if ! python3 -m zipfile -e "$tmpzip" "$INSTALL_DIR"; then
-            rm -f "$tmpzip"
+        rm -rf "$tmpdir"
+        mkdir -p "$tmpdir"
+        if ! python3 -m zipfile -e "$tmpzip" "$tmpdir"; then
+            rm -rf "$tmpzip" "$tmpdir"
             die "Failed to extract $tmpzip"
         fi
         rm -f "$tmpzip"
 
-        # chmod +x on main binary and all sidecars (Python's zipfile strips mode bits)
-        local main_bp
-        main_bp="$(bin_path "$server")"
-        [ -f "$main_bp" ] && chmod +x "$main_bp"
+        # Flatten: archive may nest binaries under a top-level directory
+        # (e.g. z39-macos-arm64/z39). Find each expected file by name and move
+        # it to INSTALL_DIR, then chmod +x (Python's zipfile strips mode bits).
+        install_zip_file() {
+            local name="$1" src dest
+            dest="${INSTALL_DIR}/${name}"
+            src="$(find "$tmpdir" -type f -name "$name" -print -quit)"
+            if [ -z "$src" ]; then
+                warn "Not found in zip: $name"
+                return 1
+            fi
+            mv -f "$src" "$dest"
+            chmod +x "$dest"
+            return 0
+        }
 
-        local sc
+        local main_name
+        main_name="$(basename "$(bin_path "$server")")"
+        install_zip_file "$main_name" || {
+            rm -rf "$tmpdir"
+            die "Main binary '$main_name' missing from $asset"
+        }
+
+        local sc sc_name
         while IFS= read -r sc; do
             [ -z "$sc" ] && continue
-            local sc_path
-            sc_path="$(bin_path "$sc")"
-            [ -f "$sc_path" ] && chmod +x "$sc_path"
+            sc_name="$(basename "$(bin_path "$sc")")"
+            install_zip_file "$sc_name" || true
         done < <(server_sidecars "$server")
+
+        rm -rf "$tmpdir"
+        unset -f install_zip_file
 
         ok "Installed ${server} + sidecars to $INSTALL_DIR"
         return 0
