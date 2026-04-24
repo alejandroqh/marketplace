@@ -62,6 +62,17 @@
       "keywords": ["repo", "explorer", "codebase", "symbols", "token-optimized", "ai-agent"],
       "category": "tools",
       "tags": ["repo-explorer", "symbol-map", "dependencies", "git-diff", "search"]
+    },
+    {
+      "name": "z39",
+      "source": "./z39",
+      "description": "Z3-powered reasoning for AI agents. Verifiable yes/no answers for scheduling, boolean logic, configuration, and action safety via SMT solving.",
+      "author": { "name": "Alejandro Quintanar" },
+      "repository": "https://github.com/alejandroqh/z39",
+      "license": "Apache-2.0",
+      "keywords": ["z3", "smt", "reasoning", "scheduling", "logic", "safety", "ai-agent"],
+      "category": "tools",
+      "tags": ["z3", "smt-solver", "scheduling", "logic", "config-validation", "safety"]
     }
   ]
 }

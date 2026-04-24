@@ -19,7 +19,7 @@ set -euo pipefail
 
 INSTALL_DIR="${H39_INSTALL_DIR:-${HOME}/.local/bin}"
 GITHUB_ORG="alejandroqh"
-SERVERS=(browser39 memory39 npcterm repo39 sudo39)
+SERVERS=(browser39 memory39 npcterm repo39 sudo39 z39)
 
 # ── Output helpers ───────────────────────────────────────────────────────────
 
@@ -32,8 +32,8 @@ die()   { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 
 server_args() {
     case "$1" in
-        browser39|memory39|repo39) echo "mcp" ;;
-        npcterm|sudo39)            echo "" ;;
+        browser39|memory39|repo39|z39) echo "mcp" ;;
+        npcterm|sudo39)                echo "" ;;
     esac
 }
 
@@ -41,6 +41,23 @@ server_has_windows() {
     case "$1" in
         repo39) return 1 ;;
         *)      return 0 ;;
+    esac
+}
+
+# Server releases shipped as a zip archive (vs a bare binary). Zipped releases
+# may bundle multiple files alongside the main binary.
+server_is_zipped() {
+    case "$1" in
+        z39) return 0 ;;
+        *)   return 1 ;;
+    esac
+}
+
+# Extra binaries installed from a server's zip, alongside the main one.
+# Used for chmod on install and cleanup on --purge. One per line.
+server_sidecars() {
+    case "$1" in
+        z39) echo "z3" ;;
     esac
 }
 
@@ -419,14 +436,49 @@ download_binary() {
         return 1
     fi
 
+    mkdir -p "$INSTALL_DIR"
+
+    if server_is_zipped "$server"; then
+        local asset="${server}-${H39_OS}-${H39_ARCH}.zip"
+        local url="https://github.com/${GITHUB_ORG}/${server}/releases/latest/download/${asset}"
+        local tmpzip="${INSTALL_DIR}/.${server}.dl.zip"
+
+        info "Downloading ${server} (${H39_OS}-${H39_ARCH})..."
+        if ! curl -fSL --progress-bar -o "$tmpzip" "$url"; then
+            rm -f "$tmpzip"
+            die "Download failed: $url"
+        fi
+
+        info "Extracting ${asset}..."
+        if ! python3 -m zipfile -e "$tmpzip" "$INSTALL_DIR"; then
+            rm -f "$tmpzip"
+            die "Failed to extract $tmpzip"
+        fi
+        rm -f "$tmpzip"
+
+        # chmod +x on main binary and all sidecars (Python's zipfile strips mode bits)
+        local main_bp
+        main_bp="$(bin_path "$server")"
+        [ -f "$main_bp" ] && chmod +x "$main_bp"
+
+        local sc
+        while IFS= read -r sc; do
+            [ -z "$sc" ] && continue
+            local sc_path
+            sc_path="$(bin_path "$sc")"
+            [ -f "$sc_path" ] && chmod +x "$sc_path"
+        done < <(server_sidecars "$server")
+
+        ok "Installed ${server} + sidecars to $INSTALL_DIR"
+        return 0
+    fi
+
     local asset="${server}-${H39_OS}-${H39_ARCH}"
     [ "$H39_OS" = "windows" ] && asset="${asset}.exe"
 
     local url="https://github.com/${GITHUB_ORG}/${server}/releases/latest/download/${asset}"
     local dest
     dest="$(bin_path "$server")"
-
-    mkdir -p "$INSTALL_DIR"
 
     info "Downloading ${server} (${H39_OS}-${H39_ARCH})..."
     if ! curl -fSL --progress-bar -o "${dest}.dl" "$url"; then
@@ -551,6 +603,16 @@ cmd_uninstall() {
                 rm "$bp"
                 ok "Deleted binary: $bp"
             fi
+            local sc
+            while IFS= read -r sc; do
+                [ -z "$sc" ] && continue
+                local sc_path
+                sc_path="$(bin_path "$sc")"
+                if [ -f "$sc_path" ]; then
+                    rm "$sc_path"
+                    ok "Deleted sidecar: $sc_path"
+                fi
+            done < <(server_sidecars "$srv")
         fi
     done <<< "$servers"
 
@@ -636,7 +698,7 @@ cmd_menu() {
     local PICKED_SERVER="" PICKED_TARGET=""
 
     # ── State: parallel arrays (bash 3.2 compat) ──
-    local bin_installed_0=0 bin_installed_1=0 bin_installed_2=0 bin_installed_3=0 bin_installed_4=0
+    local bin_installed_0=0 bin_installed_1=0 bin_installed_2=0 bin_installed_3=0 bin_installed_4=0 bin_installed_5=0
     local cfg_claude_cli="" cfg_claude_desktop="" cfg_opencode="" cfg_codex="" cfg_openclaw=""
 
     refresh_state() {
@@ -731,6 +793,7 @@ cmd_menu() {
     local SERVER_DESCS_2="Headless terminal emulator"
     local SERVER_DESCS_3="Token-optimized repo explorer"
     local SERVER_DESCS_4="Privilege-elevation server"
+    local SERVER_DESCS_5="Z3-powered SMT reasoning"
 
     draw_menu() {
         printf '\033[2J\033[H'
@@ -777,10 +840,12 @@ cmd_menu() {
         printf '  %s [1-%d]: ' "$prompt_msg" "${#SERVERS[@]}"
         local choice
         read -r choice <&3
-        case "$choice" in
-            [1-5]) PICKED_SERVER="${SERVERS[$((choice-1))]}"; return 0 ;;
-            *)     warn "Invalid choice"; return 1 ;;
-        esac
+        if [[ "$choice" =~ ^[0-9]+$ ]] && [ "$choice" -ge 1 ] && [ "$choice" -le "${#SERVERS[@]}" ]; then
+            PICKED_SERVER="${SERVERS[$((choice-1))]}"
+            return 0
+        fi
+        warn "Invalid choice"
+        return 1
     }
 
     pick_target() {
@@ -919,6 +984,7 @@ cmd_help() {
     npcterm      Headless terminal emulator for AI agents
     repo39       Token-optimized repo explorer for AI agents
     sudo39       Privilege-elevation for AI agents
+    z39          Z3-powered SMT reasoning for AI agents
 
   Targets:
     claude-cli       Claude Code CLI (~/.claude.json)

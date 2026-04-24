@@ -1,0 +1,36 @@
+{
+  "id": "z39",
+  "name": "z39",
+  "description": "Z3-powered reasoning for AI agents. Verifiable yes/no answers for scheduling, boolean logic, configuration, and action safety via SMT solving.",
+  "version": "1.0.0",
+  "contracts": {
+    "tools": [
+      "z39_schedule",
+      "z39_logic",
+      "z39_config",
+      "z39_safety",
+      "z39_solve",
+      "z39_solve_async",
+      "z39_job_status",
+      "z39_job_result",
+      "z39_job_cancel"
+    ]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "binaryPath": {
+        "type": "string",
+        "description": "Path to the z39 binary. Defaults to 'z39' (must be in PATH). The z3 solver binary must also be available on PATH or alongside z39."
+      }
+    }
+  },
+  "uiHints": {
+    "binaryPath": {
+      "label": "Binary path",
+      "placeholder": "z39",
+      "help": "Absolute path to the z39 binary, or leave empty to use PATH"
+    }
+  }
+}
